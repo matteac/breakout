@@ -1,7 +1,7 @@
-mod Struct;
+mod entities;
 
+use entities::{Ball, Block, Player, BLOCK_SIZE};
 use macroquad::prelude::*;
-use Struct::{Ball, Block, Player, BLOCK_SIZE};
 
 pub enum GameState {
     Menu,
