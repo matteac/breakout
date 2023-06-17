@@ -1,6 +1,6 @@
 mod entities;
 
-use entities::{Ball, Block, Player, BLOCK_SIZE};
+use entities::{Ball, Block, Player, BALL_SIZE, BLOCK_SIZE};
 use macroquad::prelude::*;
 
 pub enum GameState {
@@ -8,6 +8,7 @@ pub enum GameState {
     Game,
     GameOver,
     Completed,
+    Paused,
 }
 
 fn init(balls: &mut Vec<Ball>, blocks: &mut Vec<Block>, player: &mut Player, difficulty: i32) {
@@ -29,11 +30,15 @@ fn init(balls: &mut Vec<Ball>, blocks: &mut Vec<Block>, player: &mut Player, dif
         block.with_lives(difficulty);
         blocks.push(block);
     }
-    balls.push(Ball::new(vec2(screen_width() * 0.5, screen_height() * 0.5)));
+    balls.push(Ball::new(Vec2::from_array([
+        player.rect.x + player.rect.w / 2.0 - BALL_SIZE.x / 2.0,
+        player.rect.y - player.rect.h,
+    ])));
 }
 
 #[macroquad::main("breakout")]
 async fn main() {
+    let mut last_score = 0;
     let debug = match std::env::var("DEBUG") {
         Ok(debug) => match debug.as_str() {
             "true" | "1" | "on" | "yes" => true,
@@ -59,13 +64,30 @@ async fn main() {
         }
         player.draw();
         match state {
+            GameState::Paused => {
+                for ball in balls.iter_mut() {
+                    ball.draw();
+                }
+                draw_stats(score, Some(&player), font);
+                draw_main_text("Paused", font);
+                draw_secondary_text("Press space to resume", font);
+                if is_key_pressed(KeyCode::Space) {
+                    state = GameState::Game;
+                }
+            }
             GameState::Menu => {
+                for ball in balls.iter_mut() {
+                    ball.draw();
+                }
                 draw_main_text("Press space to start", font);
-                if is_key_down(KeyCode::Space) {
+                if is_key_pressed(KeyCode::Space) {
                     state = GameState::Game;
                 }
             }
             GameState::Game => {
+                if is_key_pressed(KeyCode::Space) {
+                    state = GameState::Paused;
+                }
                 if debug {
                     if is_key_down(KeyCode::K) {
                         blocks.pop();
@@ -82,7 +104,14 @@ async fn main() {
                 }
 
                 if balls.len() == 0 {
-                    state = GameState::GameOver;
+                    player.lives -= 1;
+                    if player.lives == 0 {
+                        last_score = score;
+                        state = GameState::GameOver;
+                    } else {
+                        state = GameState::Paused;
+                        init(&mut balls, &mut blocks, &mut player, difficulty)
+                    }
                 }
                 balls.retain(|ball| ball.rect.y < screen_height());
 
@@ -110,26 +139,22 @@ async fn main() {
                     state = GameState::Completed;
                 }
 
-                draw_text_ex(
-                    &format!("Score: {}", score),
-                    32.0,
-                    32.0,
-                    TextParams {
-                        font,
-                        font_size: 32u16,
-                        color: BLACK,
-                        ..Default::default()
-                    },
-                );
+                draw_stats(score, Some(&player), font)
             }
             GameState::GameOver => {
                 draw_main_text("Game Over", font);
                 draw_secondary_text("Press space to try again", font);
 
+                draw_stats(last_score, None, font);
+
+                score = 0;
+                difficulty = 1;
+                player.lives = 3;
+                init(&mut balls, &mut blocks, &mut player, difficulty);
+                for ball in balls.iter_mut() {
+                    ball.draw();
+                }
                 if is_key_down(KeyCode::Space) {
-                    score = 0;
-                    difficulty = 1;
-                    init(&mut balls, &mut blocks, &mut player, difficulty);
                     state = GameState::Game;
                 }
             }
@@ -206,4 +231,38 @@ fn resolve_collision(a: &mut Rect, vel: &mut Vec2, b: &Rect) -> bool {
         }
     }
     true
+}
+
+fn draw_stats(score: usize, player: Option<&Player>, font: Font) {
+    let lives = match player {
+        Some(player) => player.lives,
+        None => 0,
+    };
+
+    let score_text = format!("Score: {}", score);
+    draw_text_ex(
+        &score_text,
+        32.0,
+        32.0,
+        TextParams {
+            font,
+            font_size: 32u16,
+            color: BLACK,
+            ..Default::default()
+        },
+    );
+
+    let lives_text = format!("Lives: {}", lives);
+    let lives_text_dim = measure_text(&lives_text, Some(font), 32, 1.0);
+    draw_text_ex(
+        &lives_text,
+        screen_width() - 32.0 - lives_text_dim.width,
+        32.0,
+        TextParams {
+            font,
+            font_size: 32u16,
+            color: BLACK,
+            ..Default::default()
+        },
+    );
 }

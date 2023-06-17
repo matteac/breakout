@@ -5,11 +5,12 @@ const PLAYER_SPEED: f32 = 700f32;
 
 pub const BLOCK_SIZE: Vec2 = Vec2::from_array([120f32, 30f32]);
 
-const BALL_SIZE: Vec2 = Vec2::from_array([16f32, 16f32]);
+pub const BALL_SIZE: Vec2 = Vec2::from_array([16f32, 16f32]);
 const BALL_SPEED: f32 = 300f32;
 
 pub struct Player {
     pub rect: Rect,
+    pub lives: i32,
 }
 
 impl Player {
@@ -21,6 +22,7 @@ impl Player {
                 w: PLAYER_SIZE.x,
                 h: PLAYER_SIZE.y,
             },
+            lives: 3,
         }
     }
     pub fn update(&mut self, dt: f32) {
@@ -57,9 +59,16 @@ pub struct Ball {
 
 impl Ball {
     pub fn new(pos: Vec2) -> Self {
-        let mut vel = vec2(rand::gen_range(-1f32, 1f32), -1f32).normalize();
-        if vel.x < 0.4f32 {
-            vel.x = 0.4f32;
+        let mut vel = vec2(rand::gen_range(-1f32, 1f32), 1f32).normalize();
+        if vel.x > 0.0 {
+            if vel.x < 0.2 {
+                vel.x = 0.2
+            }
+        }
+        if vel.x < 0.0 {
+            if vel.x > -0.2 {
+                vel.x = -0.2
+            }
         }
         Self {
             rect: Rect {
@@ -104,7 +113,7 @@ impl Ball {
 
         self.draw();
     }
-    fn draw(&self) {
+    pub fn draw(&self) {
         draw_rectangle(
             self.rect.x,
             self.rect.y,
