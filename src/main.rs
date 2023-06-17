@@ -1,6 +1,6 @@
 mod entities;
 
-use entities::{Ball, Block, Player, BALL_SIZE, BLOCK_SIZE};
+use entities::{ball_size, Ball, Block, Player, BLOCK_SIZE};
 use macroquad::prelude::*;
 
 pub enum GameState {
@@ -31,7 +31,7 @@ fn init(balls: &mut Vec<Ball>, blocks: &mut Vec<Block>, player: &mut Player, dif
         blocks.push(block);
     }
     balls.push(Ball::new(Vec2::from_array([
-        player.rect.x + player.rect.w / 2.0 - BALL_SIZE.x / 2.0,
+        player.rect.x + player.rect.w / 2.0 - ball_size().x / 2.0,
         player.rect.y - player.rect.h,
     ])));
 }

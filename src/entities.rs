@@ -1,11 +1,15 @@
 use macroquad::prelude::*;
 
-const PLAYER_SIZE: Vec2 = Vec2::from_array([128f32, 32f32]);
 const PLAYER_SPEED: f32 = 700f32;
 
 pub const BLOCK_SIZE: Vec2 = Vec2::from_array([120f32, 30f32]);
 
-pub const BALL_SIZE: Vec2 = Vec2::from_array([16f32, 16f32]);
+pub fn player_size() -> Vec2 {
+    return Vec2::from_array([screen_width() / 5f32, screen_width() / 20f32]);
+}
+pub fn ball_size() -> Vec2 {
+    return Vec2::from_array([screen_width() / 50f32, screen_width() / 50f32]);
+}
 const BALL_SPEED: f32 = 300f32;
 
 pub struct Player {
@@ -17,15 +21,19 @@ impl Player {
     pub fn new() -> Self {
         Self {
             rect: Rect {
-                x: screen_width() * 0.5f32 - PLAYER_SIZE.x * 0.5f32,
-                y: screen_height() - 100f32,
-                w: PLAYER_SIZE.x,
-                h: PLAYER_SIZE.y,
+                x: screen_width() * 0.5f32 - (player_size().x * 2f32),
+                y: screen_height() - player_size().y * 2.0,
+                w: player_size().x,
+                h: player_size().y,
             },
             lives: 3,
         }
     }
     pub fn update(&mut self, dt: f32) {
+        self.rect.w = screen_width() / 5.0;
+        self.rect.h = screen_height() / 20.0;
+        self.rect.y = screen_height() - self.rect.h * 2.0;
+
         let x_move = match (
             (is_key_down(KeyCode::Left) || is_key_down(KeyCode::A)),
             (is_key_down(KeyCode::Right) || is_key_down(KeyCode::D)),
@@ -74,8 +82,8 @@ impl Ball {
             rect: Rect {
                 x: pos.x,
                 y: pos.y,
-                w: BALL_SIZE.x,
-                h: BALL_SIZE.y,
+                w: ball_size().x,
+                h: ball_size().y,
             },
             velocity: vel,
         }
@@ -95,6 +103,8 @@ impl Ball {
                 }
             }
         };
+        self.rect.w = ball_size().x;
+        self.rect.h = ball_size().y;
         self.rect.x += self.velocity.x * dt * speed;
         self.rect.y += self.velocity.y * dt * speed;
 
